@@ -73,24 +73,24 @@ RUN GPG_KEYS=A0E98066 \
 		libxslt-dev \
 		gd-dev \
 		geoip-dev \
-		valgrind-devel \
+		valgrind-dev \
 		perl-dev \
 	&& curl -fSL http://openresty.org/download/openresty-${OPENRESTY_VERSION}.tar.gz -o openresty.tar.gz \
-	#&& curl -fSL https://openresty.org/download/openresty-${OPENRESTY_VERSION}.tar.gz.asc  -o openresty.tar.gz.asc \
+	&& curl -fSL https://openresty.org/download/openresty-${OPENRESTY_VERSION}.tar.gz.asc  -o openresty.tar.gz.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \
-	#&& found=''; \
-	#for server in \
-	#	pgp.mit.edu \
-	#	ha.pool.sks-keyservers.net \
-	#	hkp://keyserver.ubuntu.com:80 \
-	#	hkp://p80.pool.sks-keyservers.net:80 \
-	#; do \
-	#	echo "Fetching GPG key $GPG_KEYS from $server"; \
-	#	gpg --keyserver "$server" --keyserver-options timeout=6000 --recv-keys "$GPG_KEYS" && found=yes && break; \
-	#done; \
-	#test -z "$found" && echo >&2 "error: failed to fetch GPG key $GPG_KEYS" && exit 1; \
-	#gpg --batch --verify openresty.tar.gz.asc openresty.tar.gz \
-	#&& rm -r "$GNUPGHOME" openresty.tar.gz.asc \
+	&& found=''; \
+	for server in \
+		pgp.mit.edu \
+		ha.pool.sks-keyservers.net \
+		hkp://keyserver.ubuntu.com:80 \
+		hkp://p80.pool.sks-keyservers.net:80 \
+	; do \
+		echo "Fetching GPG key $GPG_KEYS from $server"; \
+		gpg --keyserver "$server" --keyserver-options timeout=6000 --recv-keys "$GPG_KEYS" && found=yes && break; \
+	done; \
+	test -z "$found" && echo >&2 "error: failed to fetch GPG key $GPG_KEYS" && exit 1; \
+	gpg --batch --verify openresty.tar.gz.asc openresty.tar.gz \
+	&& rm -r "$GNUPGHOME" openresty.tar.gz.asc \
 	&& tar -zxC /root -f openresty.tar.gz \
 	&& rm openresty.tar.gz \
 	&& cd /root/openresty-$OPENRESTY_VERSION \
