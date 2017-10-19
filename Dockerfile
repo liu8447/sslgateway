@@ -8,11 +8,12 @@ RUN GPG_KEYS=A0E98066 \
 	&& BASEPATH=sslgateway \
 	&& NAMEVAR=sslgw \
 	&& OPENRESTY_VERSION=1.11.2.5 \
+	&& NGINX_VERSION=1.11.2 \
 	&& CONFIG="\
 		--prefix=/etc/${BASEPATH} \
 		--sbin-path=/usr/sbin/${NAMEVAR} \
 		--modules-path=/usr/lib/${BASEPATH}/modules \
-		--conf-path=/etc/${BASEPATH}/${NAMEVAR}.conf \
+		--conf-path=/etc/${BASEPATH}/conf/${NAMEVAR}.conf \
 		--error-log-path=/var/log/${BASEPATH}/${NAMEVAR}_error.log \
 		--http-log-path=/var/log/${BASEPATH}/${NAMEVAR}_access.log \
 		--pid-path=/var/run/${NAMEVAR}.pid \
@@ -47,13 +48,9 @@ RUN GPG_KEYS=A0E98066 \
 		--with-threads \
 		--with-stream \
 		--with-stream_ssl_module \
-		--with-stream_ssl_preread_module \
-		--with-stream_realip_module \
-		--with-stream_geoip_module=dynamic \
 		--with-http_slice_module \
 		--with-mail \
 		--with-mail_ssl_module \
-		--with-compat \
 		--with-file-aio \
 		--with-http_v2_module \
 	" \
@@ -86,37 +83,38 @@ RUN GPG_KEYS=A0E98066 \
 		hkp://p80.pool.sks-keyservers.net:80 \
 	; do \
 		echo "Fetching GPG key $GPG_KEYS from $server"; \
-		gpg --keyserver "$server" --keyserver-options timeout=6000 --recv-keys "$GPG_KEYS" && found=yes && break; \
+		gpg --keyserver "$server" --keyserver-options timeout=100 --recv-keys "$GPG_KEYS" && found=yes && break; \
 	done; \
 	test -z "$found" && echo >&2 "error: failed to fetch GPG key $GPG_KEYS" && exit 1; \
 	gpg --batch --verify openresty.tar.gz.asc openresty.tar.gz \
-	&& rm -r "$GNUPGHOME" openresty.tar.gz.asc \
+	&& echo "GPG $GNUPGHOME" \
+	&& rm -rf "$GNUPGHOME" openresty.tar.gz.asc \
 	&& tar -zxC /root -f openresty.tar.gz \
 	&& rm openresty.tar.gz \
 	&& cd /root/openresty-$OPENRESTY_VERSION \
 	&& ./configure $CONFIG --with-debug --with-luajit-xcflags='-DLUAJIT_USE_SYSMALLOC -DLUAJIT_USE_VALGRIND' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
-	&& mv objs/nginx objs/${NAMEVAR}-debug \
-	&& mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
-	&& mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
-	&& mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
-	&& mv objs/ngx_http_perl_module.so objs/ngx_http_perl_module-debug.so \
-	&& mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
+	&& mkdir debug \
+	&& mv build/nginx-${NGINX_VERSION}/objs/nginx debug/nginx-debug \
+	&& mv build/nginx-${NGINX_VERSION}/objs/ngx_http_xslt_filter_module.so debug/ngx_http_xslt_filter_module-debug.so \
+	&& mv build/nginx-${NGINX_VERSION}/objs/ngx_http_image_filter_module.so debug/ngx_http_image_filter_module-debug.so \
+	&& mv build/nginx-${NGINX_VERSION}/objs/ngx_http_geoip_module.so debug/ngx_http_geoip_module-debug.so \
+	&& mv build/nginx-${NGINX_VERSION}/objs/ngx_http_perl_module.so debug/ngx_http_perl_module-debug.so \
 	&& ./configure $CONFIG \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& make install \
 	&& rm -rf /etc/${BASEPATH}/nginx/html/ \
-	&& mkdir /etc/nginx/conf.d/ \
-	&& install -m755 objs/${NAMEVAR}-debug /usr/sbin/${NAMEVAR}-debug \
-	&& install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_xslt_filter_module-debug.so \
-	&& install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_image_filter_module-debug.so \
-	&& install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_geoip_module-debug.so \
-	&& install -m755 objs/ngx_http_perl_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_perl_module-debug.so \
-	&& install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_stream_geoip_module-debug.so \
+	&& rm -rf /etc/${BASEPATH}/bin/openresty \
+	#&& mkdir /etc/${BASEPATH}/conf.d/ 
+	&& install -m755 debug/nginx-debug /usr/sbin/${NAMEVAR}-debug \
+	&& install -m755 debug/ngx_http_xslt_filter_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_xslt_filter_module-debug.so \
+	&& install -m755 debug/ngx_http_image_filter_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_image_filter_module-debug.so \
+	&& install -m755 debug/ngx_http_geoip_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_geoip_module-debug.so \
+	&& install -m755 debug/ngx_http_perl_module-debug.so /usr/lib/${BASEPATH}/modules/ngx_http_perl_module-debug.so \
 	&& ln -s /usr/lib/${BASEPATH}/modules /etc/${BASEPATH}/modules \
 	&& strip /usr/sbin/${NAMEVAR}* \
 	&& strip /usr/lib/${BASEPATH}/modules/*.so \
-	&& rm -rf /root/openresty-$NGINX_VERSION \
+	&& rm -rf /root/openresty-$OPENRESTY_VERSION \
 	\
 	# Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
@@ -132,12 +130,13 @@ RUN GPG_KEYS=A0E98066 \
 			| xargs -r apk info --installed \
 			| sort -u \
 	)" \
-	&& apk add --no-cache --virtual .nginx-rundeps $runDeps \
+	&& apk add --no-cache --virtual .nginx-rundeps $runDeps gcc \
 	&& apk del .build-deps \
 	&& apk del .gettext \
 	&& mv /tmp/envsubst /usr/local/bin/ \
 	\
 	# forward request and error logs to docker log collector
+	&& echo "runDeps-----$runDeps" \
 	&& ln -sf /dev/stdout /var/log/${BASEPATH}/${NAMEVAR}_access.log \
 	&& ln -sf /dev/stderr /var/log/${BASEPATH}/${NAMEVAR}_error.log
 
@@ -146,4 +145,4 @@ EXPOSE 80 443
 
 STOPSIGNAL SIGTERM
 
-CMD ["nginx", "-g", "daemon off;"]
+#CMD ["$NAMEVAR", "-g", "daemon off;"]
