@@ -92,6 +92,8 @@ RUN GPG_KEYS=A0E98066 \
 	&& tar -zxC /root -f openresty.tar.gz \
 	&& rm openresty.tar.gz \
 	&& cd /root/openresty-$OPENRESTY_VERSION \
+	&& sed -i "s#prefix/nginx#prefix/sslgateway" configure \
+	&& sed -i "s#openresty#openresty" configure \
 	&& sed -i "s#\"NGINX\"#\"$NAMEVAR\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.h \
   && sed -i "s#\"openresty/\"#\"$NAMEVAR/\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.h \
   && sed -i "s#\"nginx version: \"#\"$NAMEVAR version:\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.c \
