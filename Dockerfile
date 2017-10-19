@@ -93,11 +93,12 @@ RUN GPG_KEYS=A0E98066 \
 	&& rm openresty.tar.gz \
 	&& cd /root/openresty-$OPENRESTY_VERSION \
 	&& sed -i "s#\"NGINX\"#\"$NAMEVAR\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.h \
-  && sed -i "s#\"nginx/\"#\"$NAMEVAR/\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.h \
-	&& sed -i "s#Server: nginx#Server: $NAMEVAR#" bundle/nginx-${NGINX_VERSION}/src/http/ngx_http_header_filter_module.c \
-	&& sed -i "s#\"<hr><center>nginx<\/center>\"#\"<hr><center>$NAMEVAR<\/center>\"#" bundle/nginx-${NGINX_VERSION}/src/http/ngx_http_special_response.c \
-	&& sed -i "s#server: nginx#server: $NAMEVAR#" bundle/nginx-${NGINX_VERSION}/src/http/v2/ngx_http_v2_filter_module.c \
-	&& sed -i "s#\"server\", \"nginx\"#\"server\", \"$NAMEVAR\"#" bundle/nginx-${NGINX_VERSION}/src/http/v2/ngx_http_v2_filter_module.c \
+  && sed -i "s#\"openresty/\"#\"$NAMEVAR/\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.h \
+  && sed -i "s#\"nginx version: \"#\"$NAMEVAR version:\"#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.c \
+  && sed -i "s#Usage: nginx#Usage: ${NAMEVAR}#" bundle/nginx-${NGINX_VERSION}/src/core/nginx.c \
+	&& sed -i "s#Server: openresty#Server: $NAMEVAR#" bundle/nginx-${NGINX_VERSION}/src/http/ngx_http_header_filter_module.c \
+	&& sed -i "s#\"<hr><center>openresty<\/center>\"#\"<hr><center>$NAMEVAR<\/center>\"#" bundle/nginx-${NGINX_VERSION}/src/http/ngx_http_special_response.c \
+	&& sed -i "s#\"nginx\"#\"$NAMEVAR\"#" bundle/nginx-${NGINX_VERSION}/src/http/v2/ngx_http_v2_filter_module.c \
 	&& ./configure $CONFIG --with-debug --with-luajit-xcflags='-DLUAJIT_USE_SYSMALLOC -DLUAJIT_USE_VALGRIND' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mkdir debug \
