@@ -142,7 +142,7 @@ RUN GPG_KEYS=A0E98066 \
 	&& mv /tmp/envsubst /usr/local/bin/ \
 	\
 	# forward request and error logs to docker log collector
-	&& echo "runDeps-----$runDeps" \
+	&& rm -rf /etc/${BASEPATH}/nginx \
 	&& ln -sf /dev/stdout /var/log/${BASEPATH}/${NAMEVAR}_access.log \
 	&& ln -sf /dev/stderr /var/log/${BASEPATH}/${NAMEVAR}_error.log
 
