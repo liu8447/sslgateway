@@ -123,15 +123,9 @@ RUN GPG_KEYS=A0E98066 \
 	&& apk add --no-cache --virtual .gettext gettext \
 	&& mv /usr/bin/envsubst /tmp/ \
 	\
-	&& runDeps="$( \
-		scanelf --needed --nobanner /usr/sbin/${NAMEVAR} /usr/lib/${BASEPATH}/modules/*.so /tmp/envsubst \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
-	)" \
-	&& apk add --no-cache --virtual .nginx-rundeps $runDeps gcc \
+	&& runDeps= readline libc openssl pcre zlib curl libxslt gd geoip perl \
 	&& apk del .build-deps \
+	&& apk add --no-cache --virtual .nginx-rundeps $runDeps  \
 	&& apk del .gettext \
 	&& mv /tmp/envsubst /usr/local/bin/ \
 	\
